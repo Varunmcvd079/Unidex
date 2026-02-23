@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UNIDEX | Workspace</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f3f4f6;
+            --text-main: #1f2937;
+            --card-bg: #ffffff;
+            --danger-color: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); }
+        
+        nav { background: var(--card-bg); padding: 1rem 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .logo { font-size: 1.5rem; font-weight: bold; color: var(--primary-color); cursor: pointer; transition: opacity 0.2s;}
+        .logo:hover { opacity: 0.8; }
+        
+        .container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+
+        .view { display: none; animation: fadeIn 0.4s ease-in; }
+        .active-view { display: block; }
+        
+        #landingView { text-align: center; margin-top: 10vh; }
+        #landingView h1 { font-size: 3rem; margin-bottom: 1rem; }
+        
+        button { cursor: pointer; border: none; border-radius: 6px; transition: 0.2s; }
+        .btn-large { background: var(--primary-color); color: white; padding: 15px 30px; font-size: 1.2rem; }
+        .btn-large:hover { background: var(--primary-hover); transform: translateY(-2px); }
+        
+        .input-bar { display: flex; gap: 10px; margin-bottom: 20px; background: var(--card-bg); padding: 15px; border-radius: 8px; }
+        .input-bar input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+        .btn-add { background: var(--primary-color); color: white; padding: 0 20px; font-size: 1rem;}
+        
+        /* NEW: Search Bar Styles */
+        .search-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background-color: #ffffff;
+        }
+        .search-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn-back { background: transparent; color: var(--primary-color); padding: 10px 0; font-weight: bold; margin-bottom: 15px; display: inline-block;}
+        .btn-back:hover { text-decoration: underline; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; list-style: none; }
+        
+        .card { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; gap: 15px; border-left: 4px solid var(--primary-color);}
+        .interactive-card { cursor: pointer; transition: transform 0.2s; }
+        .interactive-card:hover { transform: translateY(-3px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .card-title { font-size: 1.2rem; font-weight: bold; }
+        
+        .btn-delete { background: var(--danger-color); color: white; padding: 6px 12px; align-self: flex-end; }
+        .btn-delete:hover { background-color: #dc2626; }
+
+        .editor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        #documentEditor { 
+            width: 100%; 
+            height: 60vh; 
+            padding: 20px; 
+            font-size: 1.1rem; 
+            line-height: 1.6; 
+            border: 1px solid #ccc; 
+            border-radius: 8px; 
+            resize: none; 
+            outline: none;
+        }
+        #documentEditor:focus { border-color: var(--primary-color); }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <nav><div class="logo" onclick="switchView('landingView')">UNIDEX</div></nav>
+
+    <div class="container">
+        
+        <div id="landingView" class="view active-view">
+            <h1>Welcome to UNIDEX</h1>
+            <p style="margin-bottom: 2rem; color: #6b7280;">Your centralized academic database.</p>
+            <button class="btn-large" onclick="switchView('subjectsView'); loadSubjects();">Student Notes</button>
+        </div>
+
+        <div id="subjectsView" class="view">
+            <h2>My Subjects</h2><br>
+            
+            <input type="text" id="searchSubjects" class="search-input" placeholder="🔍 Search subjects..." onkeyup="filterList('searchSubjects', 'subjectsList')">
+
+            <div class="input-bar">
+                <input type="text" id="subjectInput" placeholder="Add a new subject (e.g., Data Structures)..." onkeypress="if(event.key === 'Enter') saveSubject()">
+                <button class="btn-add" onclick="saveSubject()">Add Subject</button>
+            </div>
+            <ul id="subjectsList" class="grid"></ul>
+        </div>
+
+        <div id="notesView" class="view">
+            <button class="btn-back" onclick="switchView('subjectsView')">← Back to Subjects</button>
+            <h2 id="currentSubjectTitle">Notes</h2><br>
+            
+            <input type="text" id="searchNotes" class="search-input" placeholder="🔍 Search files..." onkeyup="filterList('searchNotes', 'notesList')">
+
+            <div class="input-bar">
+                <input type="text" id="noteTitleInput" placeholder="Name your new document (e.g., Arrays vs Linked Lists)..." onkeypress="if(event.key === 'Enter') createNote()">
+                <button class="btn-add" onclick="createNote()">Create File</button>
+            </div>
+            <ul id="notesList" class="grid"></ul>
+        </div>
+
+        <div id="editorView" class="view">
+            <button class="btn-back" onclick="switchView('notesView'); loadNotes();">← Back to Files</button>
+            <div class="editor-header">
+                <h2 id="editorTitle">Document Title</h2>
+                <button class="btn-add" style="padding: 10px 20px;" onclick="saveDocument()">Save Document</button>
+            </div>
+            <textarea id="documentEditor" placeholder="Start typing your notes here..."></textarea>
+        </div>
+
+    </div>
+
+    <script>
+        let currentSubjectId = null;
+        let currentNoteId = null; 
+
+        function switchView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active-view'));
+            document.getElementById(viewId).classList.add('active-view');
+            
+            // Clear search bars when switching views so nothing is accidentally hidden
+            document.getElementById('searchSubjects').value = '';
+            document.getElementById('searchNotes').value = '';
+            if(viewId === 'subjectsView') filterList('searchSubjects', 'subjectsList');
+            if(viewId === 'notesView') filterList('searchNotes', 'notesList');
+        }
+
+        // ================= Search Filtering Logic (NEW) =================
+        function filterList(inputId, listId) {
+            const query = document.getElementById(inputId).value.toLowerCase();
+            const cards = document.querySelectorAll(`#${listId} .interactive-card`);
+            
+            cards.forEach(card => {
+                const titleText = card.querySelector('.card-title').innerText.toLowerCase();
+                if (titleText.includes(query)) {
+                    card.style.display = ''; // Show the card
+                } else {
+                    card.style.display = 'none'; // Hide the card
+                }
+            });
+        }
+
+        // ================= Subjects Logic =================
+        async function loadSubjects() {
+            const res = await fetch('/api/subjects');
+            const subjects = await res.json();
+            const list = document.getElementById('subjectsList');
+            list.innerHTML = '';
+            
+            subjects.forEach(sub => {
+                const li = document.createElement('li');
+                li.className = 'card interactive-card';
+                li.onclick = () => openSubject(sub.id, sub.name);
+                li.innerHTML = `
+                    <div class="card-title">📁 ${sub.name}</div>
+                    <button class="btn-delete" onclick="event.stopPropagation(); deleteSubject(${sub.id})">Delete</button>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        async function saveSubject() {
+            const input = document.getElementById('subjectInput');
+            if (!input.value.trim()) return;
+            await fetch('/api/subjects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: input.value.trim() })
+            });
+            input.value = '';
+            loadSubjects();
+        }
+
+        async function deleteSubject(id) {
+            await fetch(`/api/subjects/${id}`, { method: 'DELETE' });
+            loadSubjects();
+        }
+
+        // ================= Notes List Logic =================
+        function openSubject(id, name) {
+            currentSubjectId = id;
+            document.getElementById('currentSubjectTitle').innerText = name + " Files";
+            switchView('notesView');
+            loadNotes();
+        }
+
+        async function loadNotes() {
+            const res = await fetch(`/api/notes/${currentSubjectId}`);
+            const notes = await res.json();
+            const list = document.getElementById('notesList');
+            list.innerHTML = '';
+            
+            notes.forEach(note => {
+                const li = document.createElement('li');
+                li.className = 'card interactive-card';
+                li.onclick = () => openDocument(note.id, note.title, note.content || '');
+                li.innerHTML = `
+                    <div class="card-title">📄 ${note.title}</div>
+                    <button class="btn-delete" onclick="event.stopPropagation(); deleteNote(${note.id})">Delete</button>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        async function createNote() {
+            const input = document.getElementById('noteTitleInput');
+            if (!input.value.trim()) return;
+            await fetch('/api/notes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: input.value.trim(), subject_id: currentSubjectId })
+            });
+            input.value = '';
+            loadNotes(); 
+        }
+
+        async function deleteNote(id) {
+            await fetch(`/api/notes/${id}`, { method: 'DELETE' });
+            loadNotes();
+        }
+
+        // ================= Text Editor Logic =================
+        function openDocument(id, title, content) {
+            currentNoteId = id;
+            document.getElementById('editorTitle').innerText = title;
+            document.getElementById('documentEditor').value = content === 'null' ? '' : content; 
+            switchView('editorView');
+        }
+
+        async function saveDocument() {
+            const newContent = document.getElementById('documentEditor').value;
+            
+            await fetch(`/api/notes/${currentNoteId}`, {
+                method: 'PUT', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: newContent })
+            });
+            
+            alert('Document Saved!');
+        }
+    </script>
+</body>
+</html>
